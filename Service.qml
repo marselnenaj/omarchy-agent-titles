@@ -22,6 +22,32 @@ Item {
         onTriggered: Hyprland.refreshToplevels()
     }
 
+    // Monitor IPC snapshots do not stay current when a workspace changes.
+    // Use live properties below and refresh special-workspace state as well.
+    Timer {
+        interval: 1000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: Hyprland.refreshMonitors()
+    }
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (event && /^(workspace|activespecial|focusedmon|monitoradded|monitorremoved)/.test(event.name)) Hyprland.refreshMonitors();
+        }
+    }
+
+    function monitorState(monitor) {
+        if (!monitor) return null;
+        var snapshot = monitor.lastIpcObject || ({});
+        return {
+            x: monitor.x, y: monitor.y,
+            activeWorkspace: { id: monitor.activeWorkspace ? monitor.activeWorkspace.id : (snapshot.activeWorkspace || {}).id },
+            specialWorkspace: snapshot.specialWorkspace || ({ id: 0 })
+        };
+    }
+
     readonly property var clients: {
         var result = [];
         var windows = Hyprland.toplevels.values;
@@ -45,7 +71,12 @@ Item {
             readonly property var monitor: modelData.monitor
             readonly property var screen: root.screenFor(monitor)
             readonly property var client: modelData.lastIpcObject || ({})
-            readonly property var label: Titles.labelFor(client, monitor ? monitor.lastIpcObject : null, root.clients)
+            property string rememberedProvider: ""
+            onClientChanged: {
+                var detected = Titles.agentTitle(client);
+                if (detected) rememberedProvider = detected.provider;
+            }
+            readonly property var label: Titles.labelFor(client, root.monitorState(monitor), root.clients, rememberedProvider)
             readonly property bool focused: modelData.activated
             readonly property string automaticName: label ? label.title : ""
             readonly property string caption: preferences.customName(client) || automaticName

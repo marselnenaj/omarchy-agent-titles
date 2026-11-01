@@ -23,4 +23,8 @@ assert.ok(model.labelFor(client, monitor, [client, { ...client, address: '0x2', 
 assert.equal(model.labelFor(client, monitor, [client, { ...client, address: '0x2', floating: true, at: [4900, 950], size: [200, 100] }]), null);
 assert.ok(model.labelFor(client, monitor, [client, { ...client, address: '0x2', floating: true, at: [0, 0], size: [200, 100] }]));
 assert.ok(model.labelFor({ ...client, fullscreen: 1 }, monitor, [{ ...client, fullscreen: 1 }]));
-console.log('17 checks passed: title detection, monitor coordinates, workspace visibility, fullscreen, floating occlusion.');
+assert.equal(model.agentTitle({ ...client, title: 'Server maintenance | Example' }).provider, 'Codex');
+assert.equal(model.agentTitle({ ...client, title: 'Sample project' }, 'Claude').provider, 'Claude');
+assert.equal(model.agentTitle({ ...client, title: '~/Example' }, 'Claude'), null);
+assert.equal(model.agentTitle({ ...client, title: 'bash' }, 'Codex'), null);
+console.log('21 checks passed: active/idle title detection, monitor coordinates, workspace visibility, fullscreen, floating occlusion.');

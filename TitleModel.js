@@ -1,12 +1,17 @@
 // Pure helpers, shared by the shell and the regression checks.
-function agentTitle(client) {
+function agentTitle(client, rememberedProvider) {
     var app = String(client.class || "");
     var title = String(client.title || "").trim();
     if (!/ghostty|alacritty|kitty|foot|wezterm|org\.omarchy\.agent|org\.omarchy\.claude|org\.omarchy\.codex/i.test(app)) return null;
     var provider = "";
     if (/^[✳✻✽✶✢*]/.test(title) || /claude/i.test(app + " " + title)) provider = "Claude";
     else if (/^[\u2800-\u28ff◐◑◒◓]/.test(title) || /codex/i.test(app + " " + title)) provider = "Codex";
+    // Codex drops its spinner while idle, but retains "task | directory".
+    else if (/\S\s+\|\s+\S/.test(title)) provider = "Codex";
     else if (/org\.omarchy\.agent/i.test(app)) provider = "AI";
+    // Keep an already recognized window labelled between activity frames.
+    // A shell/path title means the agent has exited, so drop that hint.
+    else if (rememberedProvider && title && !/^(?:[~\/]|(?:bash|zsh|fish|sh|ghostty|terminal)$|\S+@\S+:)/i.test(title)) provider = rememberedProvider;
     if (!provider) return null;
     title = title.replace(/^[\u2800-\u28ff✳✻✽✶✢◐◑◒◓*\s]+/, "").trim();
     return { provider: provider, title: title || provider };
@@ -23,8 +28,8 @@ function overlaps(a, b) {
     return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
-function labelFor(client, monitor, clients) {
-    var title = agentTitle(client);
+function labelFor(client, monitor, clients, rememberedProvider) {
+    var title = agentTitle(client, rememberedProvider);
     if (!title || !monitor || client.mapped === false || client.hidden || !client.at || !client.size || !workspaceVisible(client, monitor)) return null;
     // Real fullscreen (2) hides every label on this monitor. Maximized (1)
     // still has terminal padding and can safely carry its own title.

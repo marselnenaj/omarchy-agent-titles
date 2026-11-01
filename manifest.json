@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.marselnenaj.agent-titles",
   "name": "Agent Window Titles",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": "marselnenaj",
   "license": "MIT",
   "description": "Persistent chat and project labels above Claude and Codex terminals.",

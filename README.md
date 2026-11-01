@@ -115,8 +115,10 @@ the illustrated preview.
 ## Limitations and troubleshooting
 
 - A normal shell is not labelled. Detection uses dedicated agent app classes,
-  agent names and common Claude/Codex title markers. A generic terminal whose
-  agent removes these markers may lose its automatic label.
+  agent names, common Claude/Codex title markers and Codex's idle
+  `task | directory` format. Recognized windows retain their agent hint between
+  activity frames; returning to a shell/path title clears the hint. Unrecognized
+  custom title formats may still need a dedicated agent app class.
 - Position changes are refreshed five times per second through Quickshell's
   shared Hyprland model; dragging can show a brief delay. No polling processes
   are spawned.
