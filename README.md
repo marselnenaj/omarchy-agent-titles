@@ -121,7 +121,9 @@ the illustrated preview.
   custom title formats may still need a dedicated agent app class.
 - Position changes are refreshed five times per second through Quickshell's
   shared Hyprland model; dragging can show a brief delay. No polling processes
-  are spawned.
+  are spawned. Unchanged snapshots and activity-spinner frames retain the same
+  presentation objects, so they do not republish the label layout state.
+  Monitor refreshes are event-driven and coalesced rather than polled.
 - Changes to terminal padding, overlapping tiled layouts and unusual compositor
   animations can require placement adjustments.
 - The editor uses a separate keyboard-capable Wayland surface over the same
@@ -131,6 +133,13 @@ the illustrated preview.
   shell with `omarchy restart shell` when convenient.
 
 ## Development
+
+The running UI uses the existing Omarchy Qt/Quickshell process. Python, Node.js
+and shell scripts below are development/installation tools, not background
+processes for the labels. Changing application language alone does not remove
+the compositor's geometry-query requirement. Native compositor decorations
+such as Hyprbars have a different integration model and can follow window
+geometry directly; this plugin remains an independently hosted overlay.
 
 Node.js 24+ and Python 3 are used only for the development checks; there are no
 npm dependencies or runtime Node processes.

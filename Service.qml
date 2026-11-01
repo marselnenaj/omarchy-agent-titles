@@ -22,19 +22,18 @@ Item {
         onTriggered: Hyprland.refreshToplevels()
     }
 
-    // Monitor IPC snapshots do not stay current when a workspace changes.
-    // Use live properties below and refresh special-workspace state as well.
+    // Monitor changes are event-driven; coalesce bursts from workspace and
+    // monitor changes instead of waking the compositor once per second.
+    Component.onCompleted: Hyprland.refreshMonitors()
     Timer {
-        interval: 1000
-        running: true
-        repeat: true
-        triggeredOnStart: true
+        id: monitorRefresh
+        interval: 16
         onTriggered: Hyprland.refreshMonitors()
     }
     Connections {
         target: Hyprland
         function onRawEvent(event) {
-            if (event && /^(workspace|activespecial|focusedmon|monitoradded|monitorremoved)/.test(event.name)) Hyprland.refreshMonitors();
+            if (event && /^(workspace|activespecial|focusedmon|monitoradded|monitorremoved|moveworkspace|configreloaded)/.test(event.name)) monitorRefresh.restart();
         }
     }
 
@@ -48,11 +47,20 @@ Item {
         };
     }
 
-    readonly property var clients: {
+    property var clientMap: ({})
+    property var clients: []
+    readonly property var observedClients: {
         var result = [];
         var windows = Hyprland.toplevels.values;
         for (var i = 0; i < windows.length; ++i) result.push(windows[i].lastIpcObject || ({}));
         return result;
+    }
+    onObservedClientsChanged: {
+        var next = Titles.reconcileClients(observedClients, clientMap);
+        if (next.changed) {
+            clientMap = next.byAddress;
+            clients = next.clients;
+        }
     }
 
     function screenFor(monitor) {
@@ -70,13 +78,8 @@ Item {
             required property var modelData
             readonly property var monitor: modelData.monitor
             readonly property var screen: root.screenFor(monitor)
-            readonly property var client: modelData.lastIpcObject || ({})
-            property string rememberedProvider: ""
-            onClientChanged: {
-                var detected = Titles.agentTitle(client);
-                if (detected) rememberedProvider = detected.provider;
-            }
-            readonly property var label: Titles.labelFor(client, root.monitorState(monitor), root.clients, rememberedProvider)
+            readonly property var client: root.clientMap[modelData.lastIpcObject.address] || ({})
+            readonly property var label: Titles.labelFor(client, root.monitorState(monitor), root.clients, client.agentProvider)
             readonly property bool focused: modelData.activated
             readonly property string automaticName: label ? label.title : ""
             readonly property string caption: preferences.customName(client) || automaticName

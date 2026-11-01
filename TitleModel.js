@@ -8,13 +8,64 @@ function agentTitle(client, rememberedProvider) {
     else if (/^[\u2800-\u28ff◐◑◒◓]/.test(title) || /codex/i.test(app + " " + title)) provider = "Codex";
     // Codex drops its spinner while idle, but retains "task | directory".
     else if (/\S\s+\|\s+\S/.test(title)) provider = "Codex";
-    else if (/org\.omarchy\.agent/i.test(app)) provider = "AI";
+    else if (/org\.omarchy\.agent/i.test(app)) provider = rememberedProvider || "AI";
     // Keep an already recognized window labelled between activity frames.
     // A shell/path title means the agent has exited, so drop that hint.
     else if (rememberedProvider && title && !/^(?:[~\/]|(?:bash|zsh|fish|sh|ghostty|terminal)$|\S+@\S+:)/i.test(title)) provider = rememberedProvider;
     if (!provider) return null;
     title = title.replace(/^[\u2800-\u28ff✳✻✽✶✢◐◑◒◓*\s]+/, "").trim();
     return { provider: provider, title: title || provider };
+}
+
+// Strip transient IPC metadata before publishing state to the UI. Stable
+// object identities prevent every IPC response from re-running each label's
+// layout, occlusion checks and text measurement.
+function presentationClient(client, previous) {
+    var detected = agentTitle(client, previous ? previous.agentProvider : "");
+    return {
+        address: client.address,
+        stableId: client.stableId,
+        class: client.class,
+        title: detected ? detected.title : String(client.title || ""),
+        agentProvider: detected ? detected.provider : "",
+        monitor: client.monitor,
+        workspace: { id: (client.workspace || {}).id },
+        at: client.at,
+        size: client.size,
+        mapped: client.mapped,
+        hidden: client.hidden,
+        fullscreen: client.fullscreen,
+        pinned: client.pinned,
+        floating: client.floating,
+        // Focus ordering matters only for floating-window occlusion.
+        focusHistoryID: client.floating ? client.focusHistoryID : undefined
+    };
+}
+
+function reconcileClients(observed, previous) {
+    var byAddress = {};
+    var clients = [];
+    var changed = observed.length !== Object.keys(previous).length;
+    for (var i = 0; i < observed.length; ++i) {
+        var raw = observed[i];
+        var old = previous[raw.address];
+        var next = presentationClient(raw, old);
+        if (old && samePresentation(old, next)) next = old;
+        else changed = true;
+        byAddress[raw.address] = next;
+        clients.push(next);
+    }
+    return { changed: changed, byAddress: byAddress, clients: clients };
+}
+
+function samePresentation(a, b) {
+    return a.address === b.address && a.stableId === b.stableId &&
+        a.class === b.class && a.title === b.title && a.agentProvider === b.agentProvider &&
+        a.monitor === b.monitor && a.workspace.id === b.workspace.id &&
+        (a.at || [])[0] === (b.at || [])[0] && (a.at || [])[1] === (b.at || [])[1] &&
+        (a.size || [])[0] === (b.size || [])[0] && (a.size || [])[1] === (b.size || [])[1] &&
+        a.mapped === b.mapped && a.hidden === b.hidden && a.fullscreen === b.fullscreen &&
+        a.pinned === b.pinned && a.floating === b.floating && a.focusHistoryID === b.focusHistoryID;
 }
 
 function workspaceVisible(client, monitor) {
