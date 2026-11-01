@@ -1,0 +1,46 @@
+# Local desktop configuration and chat/window state
+shell.before.json
+shell.*.json
+agent-titles.json
+.config/
+.local/
+runtime-*/
+*-backups/
+backups/
+*.bak
+*.bak.*
+*.before.*
+
+# Credentials and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+auth.json
+credentials.json
+.aws/
+.ssh/
+.codex/
+.claude/
+
+# Logs, recordings and temporary files
+*.log
+*.jsonl
+*.sqlite*
+*.db
+*.png
+*.jpg
+*.jpeg
+*.mp4
+*.webm
+*.tmp
+*.swp
+*~
+__pycache__/
+node_modules/
+.DS_Store
+.idea/
+.vscode/

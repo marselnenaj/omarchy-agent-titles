@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="330" viewBox="0 0 1060 330" role="img" aria-labelledby="title desc">
+  <title id="title">Agent Window Titles</title>
+  <desc id="desc">Illustration of two terminal windows with editable Claude and Codex task labels.</desc>
+  <rect width="1060" height="330" rx="14" fill="#111512"/>
+  <g fill="#181e19" stroke="#465447">
+    <rect x="26" y="46" width="494" height="256" rx="8"/>
+    <rect x="540" y="46" width="494" height="256" rx="8"/>
+  </g>
+  <g font-family="monospace" font-size="15" fill="#e4eae4">
+    <rect x="113" y="33" width="320" height="28" rx="5" fill="#171c17" stroke="#b4e66e"/>
+    <text x="126" y="52" font-size="11" fill="#b4e66e">CLAUDE</text>
+    <text x="187" y="52" font-weight="bold">Website redesign</text>
+    <rect x="628" y="33" width="320" height="28" rx="5" fill="#171c17" stroke="#667566"/>
+    <text x="641" y="52" font-size="11" fill="#9aa89a">CODEX</text>
+    <text x="695" y="52" font-weight="bold">API integration</text>
+    <text x="49" y="103" fill="#9bb09b">~/projects/website</text>
+    <text x="49" y="142">&gt; Update the landing page layout</text>
+    <text x="49" y="184" fill="#b4e66e">✓ Components updated</text>
+    <text x="49" y="213" fill="#b4e66e">✓ Preview ready</text>
+    <text x="563" y="103" fill="#9bb09b">~/projects/service</text>
+    <text x="563" y="142">&gt; Add the search endpoint</text>
+    <text x="563" y="184" fill="#b4e66e">✓ Endpoint implemented</text>
+    <text x="563" y="213" fill="#b4e66e">✓ Tests passing</text>
+    <text x="49" y="272" font-size="12" fill="#91a191">Click the tag to rename · Enter saves · Escape cancels</text>
+  </g>
+</svg>
