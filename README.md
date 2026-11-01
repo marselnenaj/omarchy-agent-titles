@@ -136,10 +136,7 @@ the illustrated preview.
 
 The running UI uses the existing Omarchy Qt/Quickshell process. Python, Node.js
 and shell scripts below are development/installation tools, not background
-processes for the labels. Changing application language alone does not remove
-the compositor's geometry-query requirement. Native compositor decorations
-such as Hyprbars have a different integration model and can follow window
-geometry directly; this plugin remains an independently hosted overlay.
+processes for the labels.
 
 Node.js 24+ and Python 3 are used only for the development checks; there are no
 npm dependencies or runtime Node processes.
