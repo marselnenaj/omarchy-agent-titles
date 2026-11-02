@@ -44,3 +44,7 @@ node_modules/
 .DS_Store
 .idea/
 .vscode/
+build/
+build-*/
+*.so
+*.o

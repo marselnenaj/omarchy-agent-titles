@@ -1,0 +1,12 @@
+[repository]
+name = "agent-titles"
+authors = ["marselnenaj"]
+
+[agent-titles]
+description = "Editable native title bars for Claude and Codex terminals"
+authors = ["marselnenaj"]
+output = "build/agent-titles.so"
+build = [
+  "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF",
+  "cmake --build build --target agent-titles -j 2"
+]

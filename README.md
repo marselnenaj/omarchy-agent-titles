@@ -1,157 +1,166 @@
-# Agent Window Titles for Omarchy
+# Agent Window Titles for Hyprland / Omarchy
 
 [![CI](https://github.com/marselnenaj/omarchy-agent-titles/actions/workflows/ci.yml/badge.svg)](https://github.com/marselnenaj/omarchy-agent-titles/actions/workflows/ci.yml)
-[![MIT license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-See which Claude or Codex terminal belongs to which task. A small, persistent
-tag follows each agent window. Click the tag to rename it in place.
+Native, editable title bars for Claude and Codex terminals. Click a title to
+name the window after its project or task.
 
-![Illustrated preview with two generic agent windows](docs/preview.svg)
+![Illustration of two generic agent windows](docs/preview.svg)
 
-The preview is an illustration using example names, not a desktop screenshot.
-
-## Features
-
-- Automatic labels from the terminal's existing chat or project title.
-- Click to rename; Enter saves, Escape cancels, clicking outside saves.
-- Clear a custom name and press Enter to return to the automatic title.
-- Labels follow windows between monitors and workspaces.
-- Labels hide on real fullscreen workspaces and behind overlapping floating windows.
-- Colors follow the Omarchy theme, with optional appearance overrides.
-- No network requests, telemetry, chat-history access or agent API keys.
+The preview uses synthetic names. The C++ decoration derives from
+[Hyprbars](https://github.com/hyprwm/hyprland-plugins/tree/v0.56.0/hyprbars).
+Hyprland handles positioning, clipping, workspace transitions and stacking.
+There is no separate UI process or position polling. Text textures are cached;
+activity spinner changes do not invalidate an unchanged title.
 
 ## Requirements
 
-This plugin needs **Omarchy Shell with its Quickshell plugin system** and
-Hyprland. Older Omarchy installations using Waybar do not provide this plugin
-host. Confirm that `omarchy plugin --help` and `omarchy-shell shell ping` work.
+Tested with **Hyprland 0.56.2**, its matching development headers, and Ghostty.
+Other Hyprland releases are not currently supported. Native plugins must be
+rebuilt against the running compositor and its dependencies. An ABI check
+rejects mismatched builds.
 
-Runtime dependencies are supplied by a compatible Omarchy installation:
-Quickshell's Hyprland and Wayland modules, and the shell's `qs.Commons` module.
-The plugin has been exercised with Ghostty on Hyprland 0.56.2. It recognizes
-Alacritty, Kitty, Foot and WezTerm classes too; those terminals have not all
-been tested interactively.
+Build tools: a compatible C++23 compiler (prefer the compositor's toolchain),
+CMake 3.27+, Ninja, pkg-config and nlohmann-json 3.11+. Development libraries:
+Hyprland, libdrm, libinput, libudev, pixman, wayland-server, xkbcommon and GLib.
 
 ## Install
 
-Use Omarchy's plugin manager:
+Using [Hyprland's plugin manager](https://wiki.hypr.land/Plugins/Using-Plugins/):
 
 ```sh
-omarchy plugin add https://github.com/marselnenaj/omarchy-agent-titles.git --enable
+hyprpm add https://github.com/marselnenaj/omarchy-agent-titles
+hyprpm enable agent-titles
+hyprpm reload
 ```
 
-The plugin ID is `io.github.marselnenaj.agent-titles`. Installation does not
-change Hyprland rules or terminal settings.
+Keep your existing `hyprpm reload` autostart configuration. Do not also load the
+same plugin manually. Use `hyprpm update` to update and rebuild, or
+`hyprpm disable agent-titles` to disable it.
+
+For a local source build:
 
 ```sh
-# Update
-omarchy plugin update io.github.marselnenaj.agent-titles
+git clone https://github.com/marselnenaj/omarchy-agent-titles.git
+cd omarchy-agent-titles
+bash install.sh
+```
 
-# Disable / enable
+The installer builds, tests and atomically installs the library under
+`$XDG_DATA_HOME/hyprland/plugins/agent-titles/`, defaulting to
+`~/.local/share/hyprland/plugins/agent-titles/`. It does not edit desktop config.
+Add this to your Hyprland Lua config, then run `hyprctl reload`:
+
+```lua
+local data = os.getenv("XDG_DATA_HOME") or (os.getenv("HOME") .. "/.local/share")
+hl.plugin.load(data .. "/hyprland/plugins/agent-titles/agent-titles.so")
+```
+
+For a legacy Hyprland config, use `plugin = /absolute/path/to/agent-titles.so`.
+When updating a manual installation, unload the old library before installing,
+then explicitly load the new library with `hyprctl plugin load /absolute/path`.
+A config reload alone does not reload an already loaded library.
+
+### Upgrading from version 1
+
+Disable the old shell overlay before enabling the native plugin:
+
+```sh
 omarchy plugin disable io.github.marselnenaj.agent-titles
-omarchy plugin enable io.github.marselnenaj.agent-titles
-
-# Uninstall; personal name settings remain in the file described below
-omarchy plugin remove io.github.marselnenaj.agent-titles
 ```
 
-If you already have a manually installed copy under this ID, disable it and
-move its directory out of `~/.config/omarchy/plugins/` before using `plugin add`.
-Keep `agent-titles.json` to preserve existing window names.
-
-For local development, `bash install.sh` copies only the runtime files into a
-user plugin directory, backs up an existing manual installation, and enables
-the plugin. It requires Bash, jq and standard GNU utilities. It deliberately
-refuses to overwrite a git-managed installation; use the plugin manager there.
+Version 2 uses Hyprland's plugin system. The former Omarchy Shell plugin
+manifest is no longer used. Keep `~/.config/omarchy/agent-titles.json`:
+custom names for existing windows in the same compositor session are preserved.
+Appearance is configured through Hyprland; the former overlay width and offset
+settings do not apply to the native title bar.
 
 ## Rename a window
 
-1. Click the title tag above an agent terminal.
-2. Type a name.
-3. Press **Enter** to save or **Escape** to cancel.
+Click the title bar and type. The existing name is selected when editing begins.
+**Enter** or **Tab** saves, **Escape** cancels, and clicking outside saves.
+Clear the name and save to restore the automatic title. Arrow keys, Home/End,
+Shift selection, Ctrl+A/C/X/V, Unicode input and key repeat are supported.
+The active editor uses green text and a visible caret. Hovering does not open
+another surface or take keyboard focus.
 
-Names belong to the current window, persist across shell reloads, and reset
-for a new terminal window or compositor session. The plugin does not rename
-the underlying Claude/Codex conversation or alter the terminal's OSC title.
+Names belong to the window and survive plugin/config reloads. They reset for
+a new window or compositor session. Renaming does not change the underlying
+conversation or the terminal's title.
 
 ## Appearance
 
-Settings are stored in
-`$XDG_CONFIG_HOME/omarchy/agent-titles.json`, defaulting to
-`~/.config/omarchy/agent-titles.json`. Changes reload automatically. The file
-is created when you first save a custom name.
+Add options after the plugin load in your Hyprland Lua config. See the complete
+[example](examples/agent-titles.lua):
 
-Merge these keys into your existing file. **Preserve `names`** if you want to
-keep your custom names. [The example file](examples/agent-titles.example.json)
-contains only generic appearance settings and is not installed automatically.
+```lua
+hl.config({ plugin = { agenttitles = {
+  bar_height = 24,
+  bar_text_size = 14,
+  bar_text_align = "center",
+  bar_color = "rgb(171717)",
+  ["col.text"] = "rgb(eeeeee)",
+} } })
+```
 
-| Key | Default | Accepted values |
+| Option | Default | Meaning |
 | --- | --- | --- |
-| `fontSize` | `14` | 10–24 pixels |
-| `maxWidth` | `960` | 160–1600 pixels |
-| `offsetY` | `0` | −80 to 80 pixels; positive moves down |
-| `background` | Theme background | `#RRGGBB` |
-| `foreground` | Theme foreground | `#RRGGBB` |
-| `accent` | Theme accent | `#RRGGBB` |
+| `enabled` | `true` | Show title bars |
+| `bar_height` | `24` | Height, 18–64 logical pixels |
+| `bar_text_size` | `14` | Font size, 10–32 |
+| `bar_text_font` | `JetBrainsMono Nerd Font` | Font family |
+| `bar_text_weight` | `600` | Font weight |
+| `bar_text_align` | `center` | `left` or `center` |
+| `bar_color` | `rgb(171717)` | Background |
+| `col.text` | `rgb(eeeeee)` | Text color |
+| `bar_padding` | `10` | Horizontal text padding |
+| `bar_blur` | `false` | Blur translucent backgrounds; requires global blur |
+| `bar_title_enabled` | `true` | Show title text |
+| `bar_part_of_window` | `true` | Include the bar in the main decoration |
+| `bar_precedence_over_border` | `false` | Place the border around the title bar |
 
-The default 24-pixel tag straddles the upper window edge and ends 14 pixels
-inside the terminal. This matches Omarchy's usual terminal padding. If your
-terminal has less top padding, adjust `offsetY` or increase its padding.
-Larger fonts extend further above the window, so they need more window gap.
+Run `hyprctl reload` after editing. The bar reserves its own space above the
+terminal content. It does not require terminal padding changes. Window rule
+effects `agenttitles:no_bar`, `agenttitles:bar_color` and
+`agenttitles:title_color` provide per-window overrides.
 
-## Privacy and behavior
+## Detection and privacy
 
-The plugin reads Hyprland's window titles, geometry and workspace state. It
-uses those titles only to draw the labels; it does not read chat databases,
-terminal contents, environment secrets or agent credentials. Custom names are
-saved locally in `agent-titles.json`. There is no diagnostic IPC endpoint that
-exports window titles or the text being edited.
+Detection uses terminal app classes and their existing window titles: Claude
+markers, Codex activity markers, agent names and Codex's `task | directory`
+format. Recognized windows keep their provider hint through idle title changes;
+returning to a shell/path title clears it. Terminal classes recognized include
+Ghostty, Alacritty, Kitty, Foot and WezTerm, plus dedicated
+`org.omarchy.agent`, `org.omarchy.claude` and `org.omarchy.codex` classes.
+Only Ghostty has been tested interactively. Unrecognized custom title formats
+may require a dedicated class. Ordinary terminals have no title bar.
 
-Do not attach your personal settings, terminal screenshots or shell config to
-an issue without checking them for private project names or other sensitive
-information. The repository contains only source, synthetic test fixtures and
-the illustrated preview.
-
-## Limitations and troubleshooting
-
-- A normal shell is not labelled. Detection uses dedicated agent app classes,
-  agent names, common Claude/Codex title markers and Codex's idle
-  `task | directory` format. Recognized windows retain their agent hint between
-  activity frames; returning to a shell/path title clears the hint. Unrecognized
-  custom title formats may still need a dedicated agent app class.
-- Position changes are refreshed five times per second through Quickshell's
-  shared Hyprland model; dragging can show a brief delay. No polling processes
-  are spawned. Unchanged snapshots and activity-spinner frames retain the same
-  presentation objects, so they do not republish the label layout state.
-  Monitor refreshes are event-driven and coalesced rather than polled.
-- Changes to terminal padding, overlapping tiled layouts and unusual compositor
-  animations can require placement adjustments.
-- The editor uses a separate keyboard-capable Wayland surface over the same
-  tag. Hovering does not open a tooltip or take keyboard focus.
-- After changing plugin code, use `omarchy-shell shell rescanPlugins`. If an
-  older QML component remains cached, disable/enable the plugin or restart the
-  shell with `omarchy restart shell` when convenient.
+Names are saved locally with owner-only permissions in
+`$XDG_CONFIG_HOME/omarchy/agent-titles.json` (default
+`~/.config/omarchy/agent-titles.json`). External edits are read on config reload.
+The plugin makes no network requests and reads no chat histories, terminal
+contents, API keys or agent credentials. Clipboard access occurs only when you
+use the editor's copy, cut or paste actions. Unloading clears a clipboard
+selection owned by the plugin.
 
 ## Development
 
-The running UI uses the existing Omarchy Qt/Quickshell process. Python, Node.js
-and shell scripts below are development/installation tools, not background
-processes for the labels.
-
-Node.js 24+ and Python 3 are used only for the development checks; there are no
-npm dependencies or runtime Node processes.
-
 ```sh
-node --test tests/*.test.cjs
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j 2
+ctest --test-dir build --output-on-failure
 python3 scripts/check-publication.py
-bash -n install.sh scripts/scan-secrets.sh
-omarchy plugin validate .  # Run on an Omarchy machine
+shellcheck install.sh scripts/scan-secrets.sh
+bash scripts/scan-secrets.sh
 ```
 
-CI runs the model/settings checks, package checks, ShellCheck and a Gitleaks
-history scan. Actions and the scanner archive are pinned to immutable
-commits/checksums. See [CONTRIBUTING.md](CONTRIBUTING.md) for the manual UI checks.
+CI tests the standalone C++ title/editor/settings code with `BUILD_PLUGIN=OFF`,
+checks publication contents and shell scripts, and scans history with Gitleaks.
+The full decoration requires matching Hyprland headers and interactive desktop
+validation. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-[MIT](LICENSE). Independently developed; not affiliated with Anthropic or OpenAI.
+Project additions: [MIT](LICENSE). Hyprbars-derived code retains its
+[BSD-3-Clause license and attribution](vendor/README.md).
+Not affiliated with Anthropic or OpenAI.
